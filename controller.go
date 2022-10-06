@@ -7,7 +7,7 @@ import (
 )
 
 type Controller struct {
-	eventStore IEventStore
+	eventStore EventStore
 }
 
 type CreateAnswerReq struct {
@@ -17,6 +17,11 @@ type CreateAnswerReq struct {
 
 type UpdateAnswerReq struct {
 	Value string `json:"value" binding:"required"`
+}
+
+func NewController(eventStore EventStore) *Controller {
+	eventStore.init()
+	return &Controller{eventStore}
 }
 
 func (ctrl *Controller) createAnswer(c *gin.Context) {

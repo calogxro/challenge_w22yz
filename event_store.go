@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,7 +17,13 @@ const (
 	DELETED_EVENT = "deleted"
 )
 
-type IEventStore interface {
+type Event struct {
+	Event string  `json:"event"`
+	Data  *Answer `json:"data"`
+}
+
+type EventStore interface {
+	init()
 	create(*Answer) (interface{}, error)
 	find(string) (*Answer, error)
 	update(*Answer) (interface{}, error)
@@ -24,50 +32,56 @@ type IEventStore interface {
 	drop()
 }
 
-type EventStore struct {
+type MongoStore struct {
+	dbUser string
+	dbPass string
+	dbHost string
+	dbPort string
+
+	dbName string
+	dbColl string
+
 	coll *mongo.Collection
 }
 
-func connect(db_uri string) *mongo.Client {
-	clientOptions := options.Client().ApplyURI(db_uri)
-	client, err := mongo.Connect(ctx, clientOptions)
+func (s *MongoStore) init() {
+	uri_template := "mongodb://%s:%s@%s:%s/"
+	uri := fmt.Sprintf(uri_template, s.dbUser, s.dbPass, s.dbHost, s.dbPort)
+
+	clientOptions := options.Client().ApplyURI(uri)
+	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return client
+	s.coll = client.Database(s.dbName).Collection(s.dbColl)
 }
 
-func (es *EventStore) drop() {
-	es.coll.Drop(ctx)
+func (s *MongoStore) drop() {
+	s.coll.Drop(context.TODO())
 }
 
 // https://stackoverflow.com/a/57777011
-func (es *EventStore) save(answer *Answer) (interface{}, error) {
+func (s *MongoStore) save(answer *Answer) (interface{}, error) {
 	answer.ID = primitive.NewObjectID()
-	result, err := es.coll.InsertOne(ctx, answer)
+	result, err := s.coll.InsertOne(context.TODO(), answer)
 	if err != nil {
 		return nil, err
 	}
 	return result.InsertedID, nil
 }
 
-func (es *EventStore) find(key string) (*Answer, error) {
+func (s *MongoStore) find(key string) (*Answer, error) {
 	filter := bson.D{{Key: "key", Value: key}}
 	opts := options.Find().SetSort(bson.D{{Key: "_id", Value: -1}}).SetLimit(1)
-	cursor, err := es.coll.Find(ctx, filter, opts)
+	cursor, err := s.coll.Find(context.TODO(), filter, opts)
 	if err != nil {
 		//panic(err)
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(context.TODO())
 
-	if found := cursor.Next(ctx); found {
+	if found := cursor.Next(context.TODO()); found {
 		var answer Answer
 		if err := cursor.Decode(&answer); err != nil {
 			//log.Fatal(err)
@@ -82,16 +96,16 @@ func (es *EventStore) find(key string) (*Answer, error) {
 	return nil, nil
 }
 
-func (es *EventStore) exists(key string) (bool, error) {
-	answer, err := es.find(key)
+func (s *MongoStore) exists(key string) (bool, error) {
+	answer, err := s.find(key)
 	if err != nil {
 		return false, err
 	}
 	return answer != nil, nil
 }
 
-func (es *EventStore) create(answer *Answer) (interface{}, error) {
-	exists, err := es.exists(answer.Key)
+func (s *MongoStore) create(answer *Answer) (interface{}, error) {
+	exists, err := s.exists(answer.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +115,12 @@ func (es *EventStore) create(answer *Answer) (interface{}, error) {
 	}
 
 	answer.Event = CREATED_EVENT
-	id, _ := es.save(answer)
+	id, _ := s.save(answer)
 	return id, nil
 }
 
-func (es *EventStore) update(answer *Answer) (interface{}, error) {
-	exists, err := es.exists(answer.Key)
+func (s *MongoStore) update(answer *Answer) (interface{}, error) {
+	exists, err := s.exists(answer.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -116,12 +130,12 @@ func (es *EventStore) update(answer *Answer) (interface{}, error) {
 	}
 
 	answer.Event = UPDATED_EVENT
-	id, _ := es.save(answer)
+	id, _ := s.save(answer)
 	return id, nil
 }
 
-func (es *EventStore) delete(key string) (interface{}, error) {
-	answer, err := es.find(key)
+func (s *MongoStore) delete(key string) (interface{}, error) {
+	answer, err := s.find(key)
 	if err != nil {
 		return nil, err
 	}
@@ -131,22 +145,22 @@ func (es *EventStore) delete(key string) (interface{}, error) {
 	}
 
 	answer.Event = DELETED_EVENT
-	id, _ := es.save(answer)
+	id, _ := s.save(answer)
 	return id, nil
 }
 
-func (es *EventStore) getHistory(key string) ([]*Event, error) {
+func (s *MongoStore) getHistory(key string) ([]*Event, error) {
 	filter := bson.D{{Key: "key", Value: key}}
 	opts := options.Find().SetSort(bson.D{{Key: "_id", Value: 1}})
-	cursor, err := es.coll.Find(ctx, filter, opts)
+	cursor, err := s.coll.Find(context.TODO(), filter, opts)
 	if err != nil {
 		//panic(err)
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(context.TODO())
 
 	var results []*Answer
-	if err = cursor.All(ctx, &results); err != nil {
+	if err = cursor.All(context.TODO(), &results); err != nil {
 		//log.Fatal(err)
 		return nil, err
 	}

@@ -1,39 +1,29 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/namsral/flag"
 )
 
-var db *mongo.Client
-var ctx = context.TODO()
+var addr, dbUser, dbPass, dbHost, dbPort string
 
-const DB_URI = "mongodb://root:example@%s:27017/"
-const DB_HOST = "localhost"
-const DB_NAME = "answers"
-const DB_COLL = "answers"
-const DB_COLL_TEST = "test_" + DB_COLL
-
-const PORT = ":8080"
+const dbName = "answers"
+const dbColl = "answers"
 
 const MSG_KEY_EXISTS = "Key exists"
 const MSG_KEY_NOTFOUND = "Key not found"
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
 func init() {
-	dbHost := getEnv("DB_HOST", DB_HOST)
-	db = connect(fmt.Sprintf(DB_URI, dbHost))
+	flag.StringVar(&addr, "IP_PORT", ":8080", "ip:port to expose")
+	flag.StringVar(&dbUser, "DB_USER", "", "db user")
+	flag.StringVar(&dbPass, "DB_PASS", "", "db password")
+	flag.StringVar(&dbHost, "DB_HOST", "0.0.0.0", "db host")
+	flag.StringVar(&dbPort, "DB_PORT", "", "db port")
+
+	flag.String(flag.DefaultConfigFlagname, ".env", "path to config file")
+	flag.Parse()
 }
 
 func NewRouter(ctrl *Controller) *gin.Engine {
@@ -54,9 +44,15 @@ func ping(c *gin.Context) {
 }
 
 func main() {
-	coll := db.Database(DB_NAME).Collection(DB_COLL)
-	eventStore := &EventStore{coll}
-	ctrl := Controller{eventStore}
-	router := NewRouter(&ctrl)
-	router.Run(PORT)
+	eventStore := &MongoStore{
+		dbUser: dbUser,
+		dbPass: dbPass,
+		dbHost: dbHost,
+		dbPort: dbPort,
+		dbName: dbName,
+		dbColl: dbColl,
+	}
+	ctrl := NewController(eventStore)
+	router := NewRouter(ctrl)
+	router.Run(addr)
 }

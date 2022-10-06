@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var testStore IEventStore
+var testStore EventStore
 var testRouter *gin.Engine
 
 var testAnswer = &Answer{Key: "name", Value: "John"}
@@ -22,10 +22,16 @@ func executeTestReq(req *http.Request) *httptest.ResponseRecorder {
 }
 
 func testsSetup() {
-	testColl := db.Database(DB_NAME).Collection(DB_COLL_TEST)
-	testStore = &EventStore{testColl}
-	testCtrl := Controller{testStore}
-	testRouter = NewRouter(&testCtrl)
+	testStore = &MongoStore{
+		dbUser: dbUser,
+		dbPass: dbPass,
+		dbHost: dbHost,
+		dbPort: dbPort,
+		dbName: dbName,
+		dbColl: "test_" + dbColl,
+	}
+	testCtrl := NewController(testStore)
+	testRouter = NewRouter(testCtrl)
 }
 
 func TestMain(m *testing.M) {

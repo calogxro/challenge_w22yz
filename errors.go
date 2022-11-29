@@ -1,5 +1,8 @@
 package main
 
+const MSG_KEY_EXISTS = "Key exists"
+const MSG_KEY_NOTFOUND = "Key not found"
+
 type KeyExists struct{}
 
 func (m *KeyExists) Error() string {

@@ -11,8 +11,10 @@ import (
 )
 
 func TestPing(t *testing.T) {
+	r := NewTestRouter()
+
 	req, _ := http.NewRequest("GET", "/ping", nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	var m map[string]string
 	resp := w.Body.Bytes()
@@ -27,16 +29,16 @@ func TestPing(t *testing.T) {
 }
 
 func TestCreateAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 }
 
 func TestCreateNotValidAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	payloads := [][]byte{
 		[]byte(`{"key":"", "value": ""}`),
@@ -48,34 +50,34 @@ func TestCreateNotValidAnswer(t *testing.T) {
 
 	for _, jsonStr := range payloads {
 		req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(jsonStr))
-		w := executeTestReq(req)
+		w := r.executeReq(req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	}
 }
 
 func TestCreateExistingAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	var w *httptest.ResponseRecorder
 
 	for i := 0; i < 2; i++ {
 		req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
-		w = executeTestReq(req)
+		w = r.executeReq(req)
 	}
 
 	assert.Equal(t, http.StatusConflict, w.Code)
 }
 
 func TestFindAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
-	executeTestReq(req)
+	r.executeReq(req)
 
 	key := testAnswer.Key
 	req, _ = http.NewRequest("GET", "/answers/"+key, nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	var m map[string]string
 	resp := w.Body.Bytes()
@@ -90,106 +92,144 @@ func TestFindAnswer(t *testing.T) {
 }
 
 func TestFindNotExistingAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	key := testAnswer.Key
 	req, _ := http.NewRequest("GET", "/answers/"+key, nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestUpdateAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
-	executeTestReq(req)
+	r.executeReq(req)
 
 	key := testAnswer.Key
 	req, _ = http.NewRequest("PATCH", "/answers/"+key, bytes.NewBuffer(testJson))
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestUpdateNotValidAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	jsonStr := []byte(`{"value": ""}`)
 	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(jsonStr))
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestUpdateNotExistingAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	key := testAnswer.Key
 	req, _ := http.NewRequest("PATCH", "/answers/"+key, bytes.NewBuffer(testJson))
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestDeleteAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
-	executeTestReq(req)
+	r.executeReq(req)
 
 	key := testAnswer.Key
 	req, _ = http.NewRequest("DELETE", "/answers/"+key, nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestDeleteNotExistingAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	key := testAnswer.Key
 	req, _ := http.NewRequest("DELETE", "/answers/"+key, nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestGetHistory(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
-	executeTestReq(req)
+	r.executeReq(req)
 
 	key := testAnswer.Key
 	req, _ = http.NewRequest("GET", "/answers/"+key+"/history", nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
-	var events []interface{}
+	var events []Event
 	resp := w.Body.Bytes()
-	err := json.Unmarshal(resp, &events)
+	err1 := json.Unmarshal(resp, &events)
+
+	var answer Answer
+	event := events[len(events)-1]
+	err2 := json.Unmarshal([]byte(event.Data), &answer)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, json.Valid(resp), "not valid json")
-	assert.Nil(t, err)
+	assert.Nil(t, err1)
 	assert.Equal(t, 1, len(events))
 
-	event, ok1 := events[0].(map[string]interface{})
-	answer, ok2 := event["data"].(map[string]interface{})
-
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.Equal(t, CREATED_EVENT, event["event"])
-	assert.Equal(t, testAnswer.Key, answer["key"])
-	assert.Equal(t, testAnswer.Value, answer["value"])
+	assert.True(t, json.Valid(event.Data), "not valid json")
+	assert.Nil(t, err2)
+	assert.Equal(t, ANSWER_CREATED_EVENT, event.Type)
+	assert.Equal(t, testAnswer.Key, answer.Key)
+	assert.Equal(t, testAnswer.Value, answer.Value)
 }
 
 func TestGetHistoryNotExistingAnswer(t *testing.T) {
-	testStore.drop()
+	r := NewTestRouter()
 
 	key := testAnswer.Key
 	req, _ := http.NewRequest("GET", "/answers/"+key+"/history", nil)
-	w := executeTestReq(req)
+	w := r.executeReq(req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetHistoryDeletedAnswer(t *testing.T) {
+	r := NewTestRouter()
+
+	req, _ := http.NewRequest("POST", "/answers", bytes.NewBuffer(testJson))
+	w := r.executeReq(req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	key := testAnswer.Key
+	req, _ = http.NewRequest("DELETE", "/answers/"+key, nil)
+	w = r.executeReq(req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest("GET", "/answers/"+key+"/history", nil)
+	w = r.executeReq(req)
+
+	var events []Event
+	resp := w.Body.Bytes()
+	err1 := json.Unmarshal(resp, &events)
+
+	var answer Answer
+	event := events[len(events)-1]
+	err2 := json.Unmarshal([]byte(event.Data), &answer)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, json.Valid(resp), "not valid json")
+	assert.Nil(t, err1)
+	assert.Equal(t, 2, len(events))
+
+	assert.True(t, json.Valid(event.Data), "not valid json")
+	assert.Nil(t, err2)
+	assert.Equal(t, ANSWER_DELETED_EVENT, event.Type)
+	assert.Equal(t, testAnswer.Key, answer.Key)
+	assert.Equal(t, "", answer.Value)
 }

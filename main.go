@@ -7,22 +7,10 @@ import (
 	"github.com/namsral/flag"
 )
 
-var addr, dbUser, dbPass, dbHost, dbPort string
-
-const dbName = "answers"
-const dbColl = "answers"
-
-const MSG_KEY_EXISTS = "Key exists"
-const MSG_KEY_NOTFOUND = "Key not found"
+var addr string
 
 func init() {
 	flag.StringVar(&addr, "IP_PORT", ":8080", "ip:port to expose")
-	flag.StringVar(&dbUser, "DB_USER", "", "db user")
-	flag.StringVar(&dbPass, "DB_PASS", "", "db password")
-	flag.StringVar(&dbHost, "DB_HOST", "0.0.0.0", "db host")
-	flag.StringVar(&dbPort, "DB_PORT", "", "db port")
-
-	flag.String(flag.DefaultConfigFlagname, ".env", "path to config file")
 	flag.Parse()
 }
 
@@ -44,15 +32,9 @@ func ping(c *gin.Context) {
 }
 
 func main() {
-	eventStore := &MongoStore{
-		dbUser: dbUser,
-		dbPass: dbPass,
-		dbHost: dbHost,
-		dbPort: dbPort,
-		dbName: dbName,
-		dbColl: dbColl,
-	}
-	ctrl := NewController(eventStore)
+	service := NewQAService(NewEventStoreDB())
+	projection := NewQAProjection(NewMySQLReadRepository())
+	ctrl := NewController(service, projection)
 	router := NewRouter(ctrl)
 	router.Run(addr)
 }

@@ -1,13 +1,12 @@
-package service
+package db
 
 import (
 	"encoding/json"
 
-	"github.com/calogxro/qaservice/db"
 	"github.com/calogxro/qaservice/domain"
 )
 
-func RecreateAnswerState(store db.IEventStore, key string) (*domain.Answer, error) {
+func RecreateAnswerState(store IEventStore, key string) (*domain.Answer, error) {
 	var answer *domain.Answer
 	events, _ := store.GetHistory(key)
 	if len(events) > 0 {
@@ -20,4 +19,9 @@ func RecreateAnswerState(store db.IEventStore, key string) (*domain.Answer, erro
 		}
 	}
 	return answer, nil
+}
+
+func AnswerExists(eventStore IEventStore, key string) bool {
+	answer, _ := RecreateAnswerState(eventStore, key)
+	return answer != nil
 }

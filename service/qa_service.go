@@ -15,13 +15,8 @@ func NewQAService(es db.IEventStore) *QAService {
 	}
 }
 
-func (s *QAService) answerExists(key string) bool {
-	answer, _ := RecreateAnswerState(s.eventStore, key)
-	return answer != nil
-}
-
 func (s *QAService) CreateAnswer(answer domain.Answer) (*domain.Event, error) {
-	if s.answerExists(answer.Key) {
+	if db.AnswerExists(s.eventStore, answer.Key) {
 		return nil, &domain.KeyExists{}
 	}
 	event, _ := domain.NewAnswerCreatedEvent(answer)
@@ -30,7 +25,7 @@ func (s *QAService) CreateAnswer(answer domain.Answer) (*domain.Event, error) {
 }
 
 func (s *QAService) UpdateAnswer(answer domain.Answer) (*domain.Event, error) {
-	if !s.answerExists(answer.Key) {
+	if !db.AnswerExists(s.eventStore, answer.Key) {
 		return nil, &domain.KeyNotFound{}
 	}
 	event, _ := domain.NewAnswerUpdatedEvent(answer)
@@ -39,7 +34,7 @@ func (s *QAService) UpdateAnswer(answer domain.Answer) (*domain.Event, error) {
 }
 
 func (s *QAService) DeleteAnswer(key string) (*domain.Event, error) {
-	if !s.answerExists(key) {
+	if !db.AnswerExists(s.eventStore, key) {
 		return nil, &domain.KeyNotFound{}
 	}
 	event, _ := domain.NewAnswerDeletedEvent(domain.Answer{Key: key})

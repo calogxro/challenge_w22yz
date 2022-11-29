@@ -1,21 +1,23 @@
-package main
+package service
 
 import (
 	"testing"
 
+	"github.com/calogxro/qaservice/db"
+	"github.com/calogxro/qaservice/domain"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
 	// Setup
 
-	es := NewEventStoreStub()
+	es := db.NewEventStoreStub()
 	service := NewQAService(es)
-	rr := NewReadRepositoryStub()
+	rr := db.NewReadRepositoryStub()
 	projector := NewProjector(rr)
 	projection := NewQAProjection(rr)
 
-	es.Subscribe(func(event *Event) {
+	es.Subscribe(func(event *domain.Event) {
 		projector.Project(event)
 	})
 
@@ -29,7 +31,7 @@ func TestService(t *testing.T) {
 
 	// Update
 
-	answer = Answer{Key: answer.Key, Value: answer.Value + "_2"}
+	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
 	service.UpdateAnswer(answer)
 	projAnswer, _ = projection.GetAnswer("name")
 
@@ -42,7 +44,7 @@ func TestService(t *testing.T) {
 
 	assert.Nil(t, projAnswer)
 	assert.NotNil(t, err)
-	assert.IsType(t, &KeyNotFound{}, err)
+	assert.IsType(t, &domain.KeyNotFound{}, err)
 
 	// History
 
@@ -53,9 +55,9 @@ func TestService(t *testing.T) {
 // sequence allowed:
 // create → delete → create → update
 func TestCreateDeleteCreateUpdate(t *testing.T) {
-	service := NewQAService(NewEventStoreStub())
+	service := NewQAService(db.NewEventStoreStub())
 
-	var testAnswer = Answer{Key: "name", Value: "John"}
+	var testAnswer = domain.Answer{Key: "name", Value: "John"}
 	var err error
 
 	// Create
@@ -78,9 +80,9 @@ func TestCreateDeleteCreateUpdate(t *testing.T) {
 // sequence allowed:
 // create → update → delete → create → update
 func TestCreateUpdateDeleteCreateUpdate(t *testing.T) {
-	service := NewQAService(NewEventStoreStub())
+	service := NewQAService(db.NewEventStoreStub())
 
-	var testAnswer = Answer{Key: "name", Value: "John"}
+	var testAnswer = domain.Answer{Key: "name", Value: "John"}
 	var err error
 
 	// Create
@@ -107,9 +109,9 @@ func TestCreateUpdateDeleteCreateUpdate(t *testing.T) {
 // sequence not allowed:
 // create → delete → update
 func TestCreateDeleteUpdate(t *testing.T) {
-	service := NewQAService(NewEventStoreStub())
+	service := NewQAService(db.NewEventStoreStub())
 
-	var testAnswer = Answer{Key: "name", Value: "John"}
+	var testAnswer = domain.Answer{Key: "name", Value: "John"}
 	var err error
 
 	// Create
@@ -128,9 +130,9 @@ func TestCreateDeleteUpdate(t *testing.T) {
 // sequence not allowed:
 // create → create
 func TestCreateCreate(t *testing.T) {
-	service := NewQAService(NewEventStoreStub())
+	service := NewQAService(db.NewEventStoreStub())
 
-	var testAnswer = Answer{Key: "name", Value: "John"}
+	var testAnswer = domain.Answer{Key: "name", Value: "John"}
 	var err error
 
 	// Create
@@ -145,9 +147,9 @@ func TestCreateCreate(t *testing.T) {
 // sequence not allowed:
 // create → delete → delete
 func TestCreateDeleteDelete(t *testing.T) {
-	service := NewQAService(NewEventStoreStub())
+	service := NewQAService(db.NewEventStoreStub())
 
-	var testAnswer = Answer{Key: "name", Value: "John"}
+	var testAnswer = domain.Answer{Key: "name", Value: "John"}
 	var err error
 
 	// Create

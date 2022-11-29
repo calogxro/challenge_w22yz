@@ -1,4 +1,4 @@
-package main
+package domain
 
 const MSG_KEY_EXISTS = "Key exists"
 const MSG_KEY_NOTFOUND = "Key not found"

@@ -5,12 +5,16 @@ services:
     image: mysql:8.0
     ports:
       - "3306:3306"
+    restart: always
     environment:
+      MYSQL_ROOT_PASSWORD: example
       MYSQL_USER: username
       MYSQL_PASSWORD: password
       MYSQL_DATABASE: qaservice
     volumes:
       - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
+    networks:
+      - mynet
 
   eventstore.db:
     image: eventstore/eventstore:20.10.2-buster-slim
@@ -33,6 +37,20 @@ services:
       - type: volume
         source: eventstore-volume-logs
         target: /var/log/eventstore
+    networks:
+      - mynet
+
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    depends_on:
+      - eventstore.db
+      - mysql
+    networks:
+      - mynet
+    ports:
+    - "8080:8080"
 
 volumes:
   eventstore-volume-data:

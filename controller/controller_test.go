@@ -1,4 +1,4 @@
-package main
+package controller
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/calogxro/qaservice/domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -167,11 +168,11 @@ func TestGetHistory(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/answers/"+key+"/history", nil)
 	w := r.executeReq(req)
 
-	var events []Event
+	var events []domain.Event
 	resp := w.Body.Bytes()
 	err1 := json.Unmarshal(resp, &events)
 
-	var answer Answer
+	var answer domain.Answer
 	event := events[len(events)-1]
 	err2 := json.Unmarshal([]byte(event.Data), &answer)
 
@@ -182,7 +183,7 @@ func TestGetHistory(t *testing.T) {
 
 	assert.True(t, json.Valid(event.Data), "not valid json")
 	assert.Nil(t, err2)
-	assert.Equal(t, ANSWER_CREATED_EVENT, event.Type)
+	assert.Equal(t, domain.ANSWER_CREATED_EVENT, event.Type)
 	assert.Equal(t, testAnswer.Key, answer.Key)
 	assert.Equal(t, testAnswer.Value, answer.Value)
 }
@@ -214,11 +215,11 @@ func TestGetHistoryDeletedAnswer(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/answers/"+key+"/history", nil)
 	w = r.executeReq(req)
 
-	var events []Event
+	var events []domain.Event
 	resp := w.Body.Bytes()
 	err1 := json.Unmarshal(resp, &events)
 
-	var answer Answer
+	var answer domain.Answer
 	event := events[len(events)-1]
 	err2 := json.Unmarshal([]byte(event.Data), &answer)
 
@@ -229,7 +230,7 @@ func TestGetHistoryDeletedAnswer(t *testing.T) {
 
 	assert.True(t, json.Valid(event.Data), "not valid json")
 	assert.Nil(t, err2)
-	assert.Equal(t, ANSWER_DELETED_EVENT, event.Type)
+	assert.Equal(t, domain.ANSWER_DELETED_EVENT, event.Type)
 	assert.Equal(t, testAnswer.Key, answer.Key)
 	assert.Equal(t, "", answer.Value)
 }

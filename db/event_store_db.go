@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
+	"github.com/calogxro/qaservice/domain"
 )
 
 var streamID = "answers"
@@ -23,7 +24,7 @@ func NewEventStoreDB() *EventStoreDB {
 	return es
 }
 
-func (s *EventStoreDB) deleteStream() error {
+func (s *EventStoreDB) DeleteStream() error {
 	opts := esdb.DeleteStreamOptions{
 		//ExpectedRevision: esdb.Revision(0),
 	}
@@ -35,7 +36,7 @@ func (s *EventStoreDB) deleteStream() error {
 	return nil
 }
 
-func (e *EventStoreDB) GetEvents() ([]*Event, error) {
+func (e *EventStoreDB) GetEvents() ([]*domain.Event, error) {
 	options := esdb.ReadStreamOptions{
 		From:      esdb.Start{},
 		Direction: esdb.Forwards,
@@ -49,7 +50,7 @@ func (e *EventStoreDB) GetEvents() ([]*Event, error) {
 
 	defer stream.Close()
 
-	var events = []*Event{}
+	var events = []*domain.Event{}
 
 	for {
 		resolvedEvent, err := stream.Recv()
@@ -66,13 +67,13 @@ func (e *EventStoreDB) GetEvents() ([]*Event, error) {
 		eventType := resolvedEvent.Event.EventType
 		eventData := resolvedEvent.Event.Data
 
-		events = append(events, NewEvent(eventType, eventData))
+		events = append(events, domain.NewEvent(eventType, eventData))
 	}
 
 	return events, nil
 }
 
-func (e *EventStoreDB) AddEvent(event *Event) error {
+func (e *EventStoreDB) AddEvent(event *domain.Event) error {
 	eventData := esdb.EventData{
 		ContentType: esdb.ContentTypeJson,
 		EventType:   event.Type,
@@ -84,7 +85,7 @@ func (e *EventStoreDB) AddEvent(event *Event) error {
 	return err
 }
 
-func (e *EventStoreDB) Subscribe(onEvent func(*Event)) error {
+func (e *EventStoreDB) Subscribe(onEvent func(*domain.Event)) error {
 	stream, err := e.db.SubscribeToAll(context.Background(), esdb.SubscribeToAllOptions{})
 
 	if err != nil {
@@ -100,7 +101,7 @@ func (e *EventStoreDB) Subscribe(onEvent func(*Event)) error {
 			eventType := event.EventAppeared.Event.EventType
 			eventData := event.EventAppeared.Event.Data
 
-			onEvent(NewEvent(eventType, eventData))
+			onEvent(domain.NewEvent(eventType, eventData))
 		}
 
 		if event.SubscriptionDropped != nil {
@@ -110,11 +111,11 @@ func (e *EventStoreDB) Subscribe(onEvent func(*Event)) error {
 	return nil
 }
 
-func (es *EventStoreDB) GetHistory(key string) ([]*Event, error) {
-	var history []*Event
+func (es *EventStoreDB) GetHistory(key string) ([]*domain.Event, error) {
+	var history []*domain.Event
 	events, _ := es.GetEvents()
 	for _, event := range events {
-		var answer Answer
+		var answer domain.Answer
 		json.Unmarshal([]byte(event.Data), &answer)
 
 		if answer.Key == key {

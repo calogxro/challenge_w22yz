@@ -1,25 +1,29 @@
-package main
+package service
 
 import (
 	"testing"
 
+	"github.com/calogxro/qaservice/db"
+	"github.com/calogxro/qaservice/domain"
 	Ω "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 )
 
+var testAnswer = domain.Answer{Key: "name", Value: "John"}
+
 func TestServiceWithMySQL(t *testing.T) {
-	db, _ := initMySQL()
-	db.Exec("DELETE FROM answer")
+	mysql, _ := db.InitMySQL()
+	mysql.Exec("DELETE FROM answer")
 
 	// Setup
 
-	es := NewEventStoreStub()
+	es := db.NewEventStoreStub()
 	service := NewQAService(es)
-	rr := NewMySQLReadRepository()
+	rr := db.NewMySQLReadRepository()
 	projector := NewProjector(rr)
 	projection := NewQAProjection(rr)
 
-	es.Subscribe(func(event *Event) {
+	es.Subscribe(func(event *domain.Event) {
 		projector.Project(event)
 	})
 
@@ -33,7 +37,7 @@ func TestServiceWithMySQL(t *testing.T) {
 
 	// Update
 
-	answer = Answer{Key: answer.Key, Value: answer.Value + "_2"}
+	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
 	service.UpdateAnswer(answer)
 	projAnswer, _ = projection.GetAnswer("name")
 
@@ -46,7 +50,7 @@ func TestServiceWithMySQL(t *testing.T) {
 
 	assert.Nil(t, projAnswer)
 	assert.NotNil(t, err)
-	assert.IsType(t, &KeyNotFound{}, err)
+	assert.IsType(t, &domain.KeyNotFound{}, err)
 
 	// History
 
@@ -57,20 +61,20 @@ func TestServiceWithMySQL(t *testing.T) {
 func TestServiceWithEventStoreDB(t *testing.T) {
 	g := Ω.NewGomegaWithT(t)
 
-	db, _ := initMySQL()
-	db.Exec("DELETE FROM answer")
+	mysql, _ := db.InitMySQL()
+	mysql.Exec("DELETE FROM answer")
 
 	// Setup
 
-	es := NewEventStoreDB()
+	es := db.NewEventStoreDB()
 	service := NewQAService(es)
-	rr := NewMySQLReadRepository()
+	rr := db.NewMySQLReadRepository()
 	projector := NewProjector(rr)
 	projection := NewQAProjection(rr)
 
-	es.deleteStream()
+	es.DeleteStream()
 
-	go es.Subscribe(func(event *Event) {
+	go es.Subscribe(func(event *domain.Event) {
 		projector.Project(event)
 	})
 
@@ -88,23 +92,23 @@ func TestServiceWithEventStoreDB(t *testing.T) {
 		qa_service_2_test.go:123:
 			Timed out after 1.001s.
 			Expected
-				<*main.Answer | 0xc000382920>: {Key: "", Value: ""}
+				<*main.domain.Answer | 0xc000382920>: {Key: "", Value: ""}
 			to equal
-				<*main.Answer | 0xc0003c7fa0>: {Key: "name", Value: "John"}
+				<*main.domain.Answer | 0xc0003c7fa0>: {Key: "name", Value: "John"}
 		FAIL
 	*/
 
-	g.Eventually(func() *Answer {
+	g.Eventually(func() *domain.Answer {
 		projAnswer, _ := projection.GetAnswer("name")
 		return projAnswer
 	}).Should(Ω.Equal(&answer))
 
 	// Update
 
-	answer = Answer{Key: answer.Key, Value: answer.Value + "_2"}
+	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
 	service.UpdateAnswer(answer)
 
-	g.Eventually(func() *Answer {
+	g.Eventually(func() *domain.Answer {
 		projAnswer, _ := projection.GetAnswer("name")
 		return projAnswer
 	}).Should(Ω.Equal(&answer))
@@ -116,5 +120,5 @@ func TestServiceWithEventStoreDB(t *testing.T) {
 	g.Eventually(func() error {
 		_, err := projection.GetAnswer("name")
 		return err
-	}).Should(Ω.Equal(&KeyNotFound{}))
+	}).Should(Ω.Equal(&domain.KeyNotFound{}))
 }

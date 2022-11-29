@@ -1,4 +1,4 @@
-module qaservice
+module github.com/calogxro/qaservice
 
 go 1.19
 

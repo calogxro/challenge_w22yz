@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-func initMySQL() (*sql.DB, error) {
+func InitMySQL() (*sql.DB, error) {
 	// Capture connection properties.
 	cfg := mysql.Config{
 		User:   "username", //os.Getenv("DBUSER"),

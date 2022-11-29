@@ -1,13 +1,16 @@
-package main
+package controller
 
 import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/calogxro/qaservice/db"
+	"github.com/calogxro/qaservice/domain"
+	"github.com/calogxro/qaservice/service"
 	"github.com/gin-gonic/gin"
 )
 
-var testAnswer = Answer{Key: "name", Value: "John"}
+var testAnswer = domain.Answer{Key: "name", Value: "John"}
 var testJson = []byte(`{"key": "name", "value": "John"}`)
 
 type TestRouter struct {
@@ -15,15 +18,15 @@ type TestRouter struct {
 }
 
 func NewTestRouter() *TestRouter {
-	es := NewEventStoreStub()
-	rr := NewReadRepositoryStub()
-	service := NewQAService(es)
-	projection := NewQAProjection(rr)
-	ctrl := NewController(service, projection)
+	es := db.NewEventStoreStub()
+	rr := db.NewReadRepositoryStub()
+	qaservice := service.NewQAService(es)
+	projection := service.NewQAProjection(rr)
+	ctrl := NewController(qaservice, projection)
 	router := NewRouter(ctrl)
 
-	projector := NewProjector(rr)
-	es.Subscribe(func(event *Event) {
+	projector := service.NewProjector(rr)
+	es.Subscribe(func(event *domain.Event) {
 		projector.Project(event)
 	})
 

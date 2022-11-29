@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"github.com/calogxro/qaservice/controller"
+	"github.com/calogxro/qaservice/db"
+	"github.com/calogxro/qaservice/service"
 	"github.com/namsral/flag"
 )
 
@@ -14,27 +14,10 @@ func init() {
 	flag.Parse()
 }
 
-func NewRouter(ctrl *Controller) *gin.Engine {
-	r := gin.New() //gin.Default()
-	r.GET("/ping", ping)
-	r.POST("/answers", ctrl.createAnswer)
-	r.GET("/answers/:key", ctrl.findAnswer)
-	r.PATCH("/answers/:key", ctrl.updateAnswer)
-	r.DELETE("/answers/:key", ctrl.deleteAnswer)
-	r.GET("/answers/:key/history", ctrl.getHistory)
-	return r
-}
-
-func ping(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
-}
-
 func main() {
-	service := NewQAService(NewEventStoreDB())
-	projection := NewQAProjection(NewMySQLReadRepository())
-	ctrl := NewController(service, projection)
-	router := NewRouter(ctrl)
+	qaservice := service.NewQAService(db.NewEventStoreDB())
+	projection := service.NewQAProjection(db.NewMySQLReadRepository())
+	ctrl := controller.NewController(qaservice, projection)
+	router := controller.NewRouter(ctrl)
 	router.Run(addr)
 }

@@ -3,7 +3,9 @@ package service
 import (
 	"testing"
 
-	"github.com/calogxro/qaservice/db"
+	es "github.com/calogxro/qaservice/db/event_store"
+	rr "github.com/calogxro/qaservice/db/read_repository"
+
 	"github.com/calogxro/qaservice/domain"
 	Ω "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
@@ -12,16 +14,61 @@ import (
 var testAnswer = domain.Answer{Key: "name", Value: "John"}
 
 func TestServiceWithMySQL(t *testing.T) {
-	mysql, _ := db.InitMySQL()
-	mysql.Exec("DELETE FROM answer")
-
 	// Setup
 
-	es := db.NewEventStoreStub()
+	es := es.NewEventStoreStub()
 	service := NewQAService(es)
-	rr := db.NewMySQLReadRepository()
+	rr := rr.NewMySQLRepository()
 	projector := NewProjector(rr)
 	projection := NewQAProjection(rr)
+
+	rr.DeleteAllAnswers()
+
+	es.Subscribe(func(event *domain.Event) {
+		projector.Project(event)
+	})
+
+	//Create
+
+	answer := testAnswer
+	service.CreateAnswer(answer)
+	projAnswer, _ := projection.GetAnswer("name")
+
+	assert.Equal(t, &answer, projAnswer)
+
+	// Update
+
+	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
+	service.UpdateAnswer(answer)
+	projAnswer, _ = projection.GetAnswer("name")
+
+	assert.Equal(t, &answer, projAnswer)
+
+	// Delete
+
+	service.DeleteAnswer(answer.Key)
+	projAnswer, err := projection.GetAnswer("name")
+
+	assert.Nil(t, projAnswer)
+	assert.NotNil(t, err)
+	assert.IsType(t, &domain.KeyNotFound{}, err)
+
+	// History
+
+	events, _ := service.GetHistory(answer.Key)
+	assert.Equal(t, 3, len(events))
+}
+
+func TestServiceWithMongoDB(t *testing.T) {
+	// Setup
+
+	es := es.NewEventStoreStub()
+	service := NewQAService(es)
+	rr := rr.NewMongoRepository()
+	projector := NewProjector(rr)
+	projection := NewQAProjection(rr)
+
+	rr.DeleteAllAnswers()
 
 	es.Subscribe(func(event *domain.Event) {
 		projector.Project(event)
@@ -61,18 +108,16 @@ func TestServiceWithMySQL(t *testing.T) {
 func TestServiceWithEventStoreDB(t *testing.T) {
 	g := Ω.NewGomegaWithT(t)
 
-	mysql, _ := db.InitMySQL()
-	mysql.Exec("DELETE FROM answer")
-
 	// Setup
 
-	es := db.NewEventStoreDB()
+	es := es.NewEventStoreDB()
 	service := NewQAService(es)
-	rr := db.NewMySQLReadRepository()
+	rr := rr.NewMySQLRepository()
 	projector := NewProjector(rr)
 	projection := NewQAProjection(rr)
 
 	es.DeleteStream()
+	rr.DeleteAllAnswers()
 
 	go es.Subscribe(func(event *domain.Event) {
 		projector.Project(event)

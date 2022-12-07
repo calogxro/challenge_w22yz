@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/calogxro/qaservice/db"
+	es "github.com/calogxro/qaservice/db/event_store"
+	rr "github.com/calogxro/qaservice/db/read_repository"
 	"github.com/calogxro/qaservice/domain"
 	"github.com/calogxro/qaservice/service"
 	"github.com/gin-gonic/gin"
@@ -18,8 +19,8 @@ type TestRouter struct {
 }
 
 func NewTestRouter() *TestRouter {
-	es := db.NewEventStoreStub()
-	rr := db.NewReadRepositoryStub()
+	es := es.NewEventStoreStub()
+	rr := rr.NewReadRepositoryStub()
 	qaservice := service.NewQAService(es)
 	projection := service.NewQAProjection(rr)
 	ctrl := NewController(qaservice, projection)

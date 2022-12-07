@@ -7,6 +7,8 @@ import (
 	"io"
 
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
+	"github.com/calogxro/qaservice/config"
+	"github.com/calogxro/qaservice/db"
 	"github.com/calogxro/qaservice/domain"
 )
 
@@ -17,23 +19,10 @@ type EventStoreDB struct {
 }
 
 func NewEventStoreDB() *EventStoreDB {
-	db, _ := initESDB()
-	es := &EventStoreDB{
+	db, _ := db.InitESDB(config.ESDB_URI)
+	return &EventStoreDB{
 		db: db,
 	}
-	return es
-}
-
-func (s *EventStoreDB) DeleteStream() error {
-	opts := esdb.DeleteStreamOptions{
-		//ExpectedRevision: esdb.Revision(0),
-	}
-	_, err := s.db.DeleteStream(context.Background(), streamID, opts)
-	if err != nil {
-		return err
-	}
-	//fmt.Printf("Drop %+v\n\n", deleteResult)
-	return nil
 }
 
 func (e *EventStoreDB) GetEvents() ([]*domain.Event, error) {
@@ -123,4 +112,16 @@ func (es *EventStoreDB) GetHistory(key string) ([]*domain.Event, error) {
 		}
 	}
 	return history, nil
+}
+
+func (s *EventStoreDB) DeleteStream() error {
+	opts := esdb.DeleteStreamOptions{
+		//ExpectedRevision: esdb.Revision(0),
+	}
+	_, err := s.db.DeleteStream(context.Background(), streamID, opts)
+	if err != nil {
+		return err
+	}
+	//fmt.Printf("Drop %+v\n\n", deleteResult)
+	return nil
 }

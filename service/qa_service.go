@@ -6,10 +6,10 @@ import (
 )
 
 type QAService struct {
-	eventStore db.IEventStore
+	eventStore db.EventStore
 }
 
-func NewQAService(es db.IEventStore) *QAService {
+func NewQAService(es db.EventStore) *QAService {
 	return &QAService{
 		eventStore: es,
 	}

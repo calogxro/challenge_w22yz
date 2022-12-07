@@ -1,6 +1,17 @@
 version: "3.4"
 
 services:
+  mongo:
+    image: mongo:4
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    networks:
+      - mynet
+    ports:
+      - 27017:27017
+
   mysql:
     image: mysql:8.0
     ports:
@@ -47,6 +58,7 @@ services:
     depends_on:
       - eventstore.db
       - mysql
+      - mongo
     networks:
       - mynet
     ports:

@@ -6,7 +6,7 @@ import (
 	"github.com/calogxro/qaservice/domain"
 )
 
-func RecreateAnswerState(store IEventStore, key string) (*domain.Answer, error) {
+func RecreateAnswerState(store EventStore, key string) (*domain.Answer, error) {
 	var answer *domain.Answer
 	events, _ := store.GetHistory(key)
 	if len(events) > 0 {
@@ -21,7 +21,7 @@ func RecreateAnswerState(store IEventStore, key string) (*domain.Answer, error) 
 	return answer, nil
 }
 
-func AnswerExists(eventStore IEventStore, key string) bool {
+func AnswerExists(eventStore EventStore, key string) bool {
 	answer, _ := RecreateAnswerState(eventStore, key)
 	return answer != nil
 }

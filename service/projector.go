@@ -8,10 +8,10 @@ import (
 )
 
 type Projector struct {
-	repository db.IReadRepository
+	repository db.ReadRepository
 }
 
-func NewProjector(repository db.IReadRepository) *Projector {
+func NewProjector(repository db.ReadRepository) *Projector {
 	return &Projector{
 		repository: repository,
 	}

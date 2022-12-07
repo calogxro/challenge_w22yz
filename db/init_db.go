@@ -1,21 +1,21 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
+	"log"
 
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
+	"github.com/calogxro/qaservice/config"
+
+	//"github.com/calogxro/qaservice/config"
 	"github.com/go-sql-driver/mysql"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func InitMySQL() (*sql.DB, error) {
-	// Capture connection properties.
-	cfg := mysql.Config{
-		User:   "username", //os.Getenv("DBUSER"),
-		Passwd: "password", //os.Getenv("DBPASS"),
-		Net:    "tcp",
-		Addr:   "127.0.0.1:3306",
-		DBName: "qaservice",
-	}
+func InitMySQL(cfg mysql.Config) (*sql.DB, error) {
 	// Get a database handle.
 	var err error
 	db, err := sql.Open("mysql", cfg.FormatDSN())
@@ -34,10 +34,8 @@ func InitMySQL() (*sql.DB, error) {
 	return db, nil
 }
 
-func initESDB() (*esdb.Client, error) {
-	uri := "esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000"
-
-	settings, err := esdb.ParseConnectionString(uri)
+func InitESDB(URI string) (*esdb.Client, error) {
+	settings, err := esdb.ParseConnectionString(URI)
 	if err != nil {
 		return nil, err
 	}
@@ -48,4 +46,18 @@ func initESDB() (*esdb.Client, error) {
 	}
 
 	return db, nil
+}
+
+func InitMongoDB(cfg config.MongoConfig) (*mongo.Client, error) {
+	uri_template := "mongodb://%s:%s@%s:%s/"
+	uri := fmt.Sprintf(uri_template, cfg.User, cfg.Pass, cfg.Host, cfg.Port)
+
+	clientOptions := options.Client().ApplyURI(uri)
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return client, nil
 }

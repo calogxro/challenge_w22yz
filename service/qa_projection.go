@@ -6,10 +6,10 @@ import (
 )
 
 type QAProjection struct {
-	repository db.IReadRepository
+	repository db.ReadRepository
 }
 
-func NewQAProjection(repository db.IReadRepository) *QAProjection {
+func NewQAProjection(repository db.ReadRepository) *QAProjection {
 	return &QAProjection{
 		repository: repository,
 	}

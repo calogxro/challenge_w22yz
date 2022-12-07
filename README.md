@@ -1,7 +1,12 @@
+# QAService
 
-### Test
+## Server
 ```
-$ go clean -testcache
-$ go test ./...
+$ godotenv go run .
+```
+
+## Test
+```
+$ go clean -testcache && godotenv go test ./...
 ```
 

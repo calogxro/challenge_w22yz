@@ -1,4 +1,4 @@
-package db
+package readrepository
 
 import "github.com/calogxro/qaservice/domain"
 

@@ -3,6 +3,7 @@ package readrepository
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/calogxro/qaservice/config"
 	"github.com/calogxro/qaservice/db"
@@ -14,7 +15,10 @@ type MySQLRepository struct {
 }
 
 func NewMySQLRepository() *MySQLRepository {
-	db, _ := db.InitMySQL(config.MySQL)
+	db, err := db.InitMySQL(config.MySQL)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return &MySQLRepository{
 		db: db,
 	}
@@ -54,5 +58,8 @@ func (rr *MySQLRepository) DeleteAnswer(answer domain.Answer) error {
 func (rr *MySQLRepository) DeleteAllAnswers() error {
 	stmt := "DELETE FROM answer"
 	_, err := rr.db.Exec(stmt)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return err
 }

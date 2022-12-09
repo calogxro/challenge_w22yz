@@ -5,10 +5,8 @@ services:
     image: mongo:4
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    networks:
-      - mynet
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASS}
     ports:
       - 27017:27017
 
@@ -18,14 +16,12 @@ services:
       - "3306:3306"
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: example
-      MYSQL_USER: username
-      MYSQL_PASSWORD: password
-      MYSQL_DATABASE: qaservice
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
-    networks:
-      - mynet
 
   eventstore.db:
     image: eventstore/eventstore:20.10.2-buster-slim
@@ -48,8 +44,6 @@ services:
       - type: volume
         source: eventstore-volume-logs
         target: /var/log/eventstore
-    networks:
-      - mynet
 
   app:
     build:
@@ -59,15 +53,19 @@ services:
       - eventstore.db
       - mysql
       - mongo
-    networks:
-      - mynet
     ports:
-    - "8080:8080"
+      - "8080:8080"
+    environment:
+      IP_PORT: ${IP_PORT}
+      EVENTSTORE_HOST: eventstore.db
+      MONGODB_HOST: mongo
+      MONGODB_USER: ${MONGODB_USER}
+      MONGODB_PASS: ${MONGODB_PASS}
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
 
 volumes:
   eventstore-volume-data:
   eventstore-volume-logs:
-
-networks:
-  mynet:
-    driver: bridge

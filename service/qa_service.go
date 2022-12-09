@@ -1,6 +1,8 @@
 package service
 
 import (
+	"log"
+
 	"github.com/calogxro/qaservice/db"
 	"github.com/calogxro/qaservice/domain"
 )
@@ -19,8 +21,21 @@ func (s *QAService) CreateAnswer(answer domain.Answer) (*domain.Event, error) {
 	if db.AnswerExists(s.eventStore, answer.Key) {
 		return nil, &domain.KeyExists{}
 	}
-	event, _ := domain.NewAnswerCreatedEvent(answer)
-	s.eventStore.AddEvent(event)
+
+	event, err := domain.NewAnswerCreatedEvent(answer)
+
+	if err != nil {
+		log.Println("domain.NewAnswerCreatedEvent", err)
+		return nil, err
+	}
+
+	err = s.eventStore.AddEvent(event)
+
+	if err != nil {
+		log.Println("(db.EventStore).AddEvent", err)
+		return nil, err
+	}
+
 	return event, nil
 }
 

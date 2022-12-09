@@ -2,6 +2,7 @@ package readrepository
 
 import (
 	"context"
+	"log"
 
 	"github.com/calogxro/qaservice/config"
 	"github.com/calogxro/qaservice/db"
@@ -17,7 +18,10 @@ type MongoRepository struct {
 
 func NewMongoRepository() *MongoRepository {
 	cfg := config.MongoDB
-	client, _ := db.InitMongoDB(cfg)
+	client, err := db.InitMongoDB(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 	coll := client.Database(cfg.DBName).Collection(cfg.DBColl)
 	return &MongoRepository{
 		coll: coll,

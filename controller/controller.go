@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/calogxro/qaservice/domain"
@@ -15,6 +16,11 @@ type CreateAnswerRequest struct {
 
 type UpdateAnswerRequest struct {
 	Value string `json:"value" binding:"required"`
+}
+
+type GetHistoryResponse struct {
+	Type string        `json:"type"`
+	Data domain.Answer `json:"data"`
 }
 
 type Controller struct {
@@ -114,15 +120,30 @@ func (ctrl *Controller) DeleteAnswer(c *gin.Context) {
 func (ctrl *Controller) GetHistory(c *gin.Context) {
 	key := c.Param("key")
 
-	history, err := ctrl.service.GetHistory(key)
+	events, err := ctrl.service.GetHistory(key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if len(history) == 0 {
+	if len(events) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"message": domain.MSG_KEY_NOTFOUND})
 		return
+	}
+
+	var history []GetHistoryResponse
+
+	for _, event := range events {
+		var answer domain.Answer
+		err := json.Unmarshal([]byte(event.Data), &answer)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": http.StatusText(http.StatusInternalServerError)})
+			return
+		}
+		history = append(history, GetHistoryResponse{
+			Type: event.Type,
+			Data: answer,
+		})
 	}
 
 	c.JSON(http.StatusOK, history)

@@ -13,106 +13,14 @@ import (
 
 var testAnswer = domain.Answer{Key: "name", Value: "John"}
 
-func TestServiceWithMySQL(t *testing.T) {
-	// Setup
-
-	es := es.NewEventStoreStub()
-	service := NewQAService(es)
-	rr := rr.NewMySQLRepository()
-	projector := NewProjector(rr)
-	projection := NewQAProjection(rr)
-
-	rr.DeleteAllAnswers()
-
-	es.Subscribe(func(event *domain.Event) {
-		projector.Project(event)
-	})
-
-	//Create
-
-	answer := testAnswer
-	service.CreateAnswer(answer)
-	projAnswer, _ := projection.GetAnswer("name")
-
-	assert.Equal(t, &answer, projAnswer)
-
-	// Update
-
-	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
-	service.UpdateAnswer(answer)
-	projAnswer, _ = projection.GetAnswer("name")
-
-	assert.Equal(t, &answer, projAnswer)
-
-	// Delete
-
-	service.DeleteAnswer(answer.Key)
-	projAnswer, err := projection.GetAnswer("name")
-
-	assert.Nil(t, projAnswer)
-	assert.NotNil(t, err)
-	assert.IsType(t, &domain.KeyNotFound{}, err)
-
-	// History
-
-	events, _ := service.GetHistory(answer.Key)
-	assert.Equal(t, 3, len(events))
-}
-
-func TestServiceWithMongoDB(t *testing.T) {
-	// Setup
-
-	es := es.NewEventStoreStub()
-	service := NewQAService(es)
-	rr := rr.NewMongoRepository()
-	projector := NewProjector(rr)
-	projection := NewQAProjection(rr)
-
-	rr.DeleteAllAnswers()
-
-	es.Subscribe(func(event *domain.Event) {
-		projector.Project(event)
-	})
-
-	//Create
-
-	answer := testAnswer
-	service.CreateAnswer(answer)
-	projAnswer, _ := projection.GetAnswer("name")
-
-	assert.Equal(t, &answer, projAnswer)
-
-	// Update
-
-	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
-	service.UpdateAnswer(answer)
-	projAnswer, _ = projection.GetAnswer("name")
-
-	assert.Equal(t, &answer, projAnswer)
-
-	// Delete
-
-	service.DeleteAnswer(answer.Key)
-	projAnswer, err := projection.GetAnswer("name")
-
-	assert.Nil(t, projAnswer)
-	assert.NotNil(t, err)
-	assert.IsType(t, &domain.KeyNotFound{}, err)
-
-	// History
-
-	events, _ := service.GetHistory(answer.Key)
-	assert.Equal(t, 3, len(events))
-}
-
-func TestServiceWithEventStoreDB(t *testing.T) {
+func TestServiceWithDBs(t *testing.T) {
 	g := Ω.NewGomegaWithT(t)
 
 	// Setup
 
 	es := es.NewEventStoreDB()
 	service := NewQAService(es)
-	rr := rr.NewMySQLRepository()
+	rr := rr.NewMongoRepository()
 	projector := NewProjector(rr)
 	projection := NewQAProjection(rr)
 

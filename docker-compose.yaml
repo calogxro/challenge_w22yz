@@ -10,19 +10,6 @@ services:
     ports:
       - 27017:27017
 
-  mysql:
-    image: mysql:8.0
-    ports:
-      - "3306:3306"
-    restart: always
-    environment:
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    volumes:
-      - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
-
   eventstore.db:
     image: eventstore/eventstore:20.10.2-buster-slim
     environment:
@@ -51,7 +38,6 @@ services:
       context: .
     depends_on:
       - eventstore.db
-      - mysql
       - mongo
     ports:
       - "8080:8080"
@@ -61,10 +47,6 @@ services:
       MONGODB_HOST: mongo
       MONGODB_USER: ${MONGODB_USER}
       MONGODB_PASS: ${MONGODB_PASS}
-      MYSQL_HOST: mysql
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
 
 volumes:
   eventstore-volume-data:

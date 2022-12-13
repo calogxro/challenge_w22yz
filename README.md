@@ -1,4 +1,4 @@
-# QAService
+# Q&A Service
 A service that exposes a REST API which allows to create, update, delete and retrieve answers as key-value pairs.
 
 Design Patterns used:
@@ -17,27 +17,29 @@ $ docker-compose up -d
 ## Usage examples
 
 ```
-# create answer
-> curl -X POST -d '{"key":"name","value":"john"}' http://localhost:8080/answers | jq .
+- create answer
+$ curl http://localhost:8080/answers \
+  -X POST -d '{"key":"name","value":"john"}' | jq .
 {
   "ok": "AnswerCreatedEvent"
 }
 
-# get answer
-> curl http://localhost:8080/answers/name | jq .
+- get answer
+$ curl http://localhost:8080/answers/name | jq .
 {
   "key": "name",
   "value": "john"
 }
 
 # error on conflict
-> curl -X POST -d '{"key":"name","value":"john"}' http://localhost:8080/answers | jq .
+> curl http://localhost:8080/answers \
+  -X POST -d '{"key":"name","value":"john"}' | jq .
 {
   "error": "Key exists"
 }
 
 # get history for given key
-> curl http://localhost:8080/answers/name/history | jq .
+$ curl http://localhost:8080/answers/name/history | jq .
 [
   {
     "type": "AnswerCreatedEvent",
@@ -49,13 +51,14 @@ $ docker-compose up -d
 ]
 
 # update answer
-> curl -X PATCH -d '{"key":"name","value":"jack"}' http://localhost:8080/answers/name | jq .
+$ curl http://localhost:8080/answers/name \
+  -X PATCH -d '{"key":"name","value":"jack"}'  | jq .
 {
   "ok": "AnswerUpdatedEvent"
 }
 
 # fetch updated
-> curl http://localhost:8080/answers/name | jq .
+$ curl http://localhost:8080/answers/name | jq .
 {
   "key": "name",
   "value": "jack"
@@ -71,3 +74,6 @@ $ godotenv go run .
 ```
 $ go clean -testcache && godotenv go test ./...
 ```
+
+## TODO
+- Handle errors

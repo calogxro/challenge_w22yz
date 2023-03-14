@@ -14,7 +14,9 @@ Databases used:
 
 ## Run it with in-memory db
 
-godotenv go run . -memdb
+```
+$ godotenv go run . -memdb
+```
 
 
 ## Run it with databases

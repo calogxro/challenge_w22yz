@@ -11,6 +11,8 @@ Databases used:
 - [EventStoreDB](https://www.eventstore.com/) as event store
 - [MongoDB](https://www.mongodb.com/) as read repository
 
+![ES-CQRS diagram](escqrs-diagram.jpg)
+
 
 ## Run it with in-memory db
 

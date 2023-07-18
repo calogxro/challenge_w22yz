@@ -1,17 +1,104 @@
 # Q&A Service
 
 A service that exposes a REST API which allows to create, update, delete and retrieve answers as key-value pairs. 
-The API also supports a `get history` operation for a given key.
+
+An `answer` can be defined as:
+
+```
+key: string
+value: string
+```
+
+e.g. in JSON:
+
+```
+{
+  "key": "name",
+  "value": "John"
+}
+```
+
+## Endpoints
+
+The API exposes the following endpoints:
+
+- `POST /answers` - Create answer
+- `PATCH /answers` - Update answer
+- `GET /answers/{key}` - Get answer (returns the latest answer for the given key)
+- `DELETE /answers/{key}` - Delete answer
+- `GET /answers/{key}/history` - Get history for given key (returns an array of events in chronological order)
+
+An `event` can be defined as:
+
+```
+event: string
+data: answer
+```
+
+e.g. in JSON:
+
+```
+{
+  "event": "create",
+  "data": {
+    "key": "name",
+    "value": "John"
+  }
+}
+```
+
+## Application requirements
+
+If a user saves the same key multiple times (using update), every answer should be saved. When retrieving an answer, it should return the latest answer.
+
+If a user tries to create an answer that already exists - the request should fail and an adequate message or code should be returned.
+
+If an answer doesn't exist or has been deleted, an adequate message or code should be returned.
+
+When returning history, only mutating events (create, update, delete) should be returned. The "get" events should not be recorded.
+
+It is possible to create a key after it has been deleted. However, it is not possible to update a deleted key. For example the following event sequences are allowed:
+
+```
+create → delete → create → update
+```
+
+```
+create → update → delete → create → update
+```
+
+However, the following should not be allowed:
+
+```
+create → delete → update
+```
+
+```
+create → create
+```
+
+## Architecture
 
 Design Patterns used:
 - [Event Sourcing](https://www.eventstore.com/event-sourcing)
 - [CQRS](https://www.eventstore.com/cqrs-pattern)
 
+Services:
+- EventStore
+- Projection
+- Projector
+
+The EventStore service represents the write side of the application.
+
+The Projection service represents the read side of the application.
+
+The Projector service synchronizes read and write data.
+
+![ES-CQRS diagram](escqrs-diagram.jpg)
+
 Databases used:
 - [EventStoreDB](https://www.eventstore.com/) as event store
 - [MongoDB](https://www.mongodb.com/) as read repository
-
-![ES-CQRS diagram](escqrs-diagram.jpg)
 
 
 ## Run
@@ -33,20 +120,6 @@ MONGODB_PASS=example
 ```
 $ docker-compose up -d
 ```
-
-
-## Endpoints
-
-Event store service's endpoints:
-
-- `POST /answers`
-- `GET /answers/{key}/history`
-- `PATCH /answers`
-- `DELETE /answers/{key}`
-
-Projection service's endpoint:
-
-- `GET /answers/{key}`
 
 
 ## Usage examples

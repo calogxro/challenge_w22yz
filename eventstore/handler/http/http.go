@@ -45,6 +45,8 @@ func MakeHandler(svc *eventstore.Service, r *gin.Engine) *gin.Engine {
 	r.DELETE("/answers/:key", handler.DeleteAnswer)
 	r.GET("/answers/:key/history", handler.GetHistory)
 
+	r.GET("/eventstore/ping", ping)
+
 	return r
 }
 
@@ -54,6 +56,12 @@ func MakeHandler(svc *eventstore.Service, r *gin.Engine) *gin.Engine {
 // 		//projection: p,
 // 	}
 // }
+
+func ping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "pong",
+	})
+}
 
 func (h *Handler) CreateAnswer(c *gin.Context) {
 	var req CreateRequest

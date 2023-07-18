@@ -21,6 +21,8 @@ func MakeHandler(svc *projection.Projection, r *gin.Engine) *gin.Engine {
 
 	r.GET("/answers/:key", handler.FindAnswer)
 
+	r.GET("/projection/ping", ping)
+
 	return r
 }
 
@@ -30,6 +32,12 @@ func MakeHandler(svc *projection.Projection, r *gin.Engine) *gin.Engine {
 // 		projection: p,
 // 	}
 // }
+
+func ping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "pong",
+	})
+}
 
 // FindAnswer returns the latest answer for a given key.
 func (h *Handler) FindAnswer(c *gin.Context) {

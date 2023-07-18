@@ -8,7 +8,7 @@ import (
 	"github.com/calogxro/qaservice/eventstore/service/eventstore"
 	rrmemdb "github.com/calogxro/qaservice/projection/repository/memory"
 	"github.com/calogxro/qaservice/projection/service/projection"
-	"github.com/calogxro/qaservice/projection/service/projector"
+	"github.com/calogxro/qaservice/projector/service/projector"
 	"github.com/stretchr/testify/assert"
 )
 

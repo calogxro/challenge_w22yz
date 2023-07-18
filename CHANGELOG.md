@@ -1,6 +1,10 @@
-1.1 (01.03.2023)
+v1.2 (18.07.2023)
+- Splitted services: eventstore, projection, projector
+- Add kubernetes-deployment.yml
+
+v1.1 (01.03.2023)
 - Use testutil/TestCase for http tests
-- Splitted services
+- Splitted services: eventstore, projection
 - Folder refactoring:
     - main.go -> eventstore/cmd/main.go
     - controller/controller.go -> eventstore/handler/http/http.go
@@ -15,4 +19,3 @@
     - service/qa_service.go -> eventstore/service/eventstore/service.go
     - service/qa_service_integration_test.go -> test/integration/db/integration_test.go
     - service/qa_service_test.go -> eventstore/service/eventstore/service_test.go
-

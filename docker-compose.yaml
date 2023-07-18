@@ -32,17 +32,60 @@ services:
         source: eventstore-volume-logs
         target: /var/log/eventstore
 
-  app:
+  # app:
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: .
+  #   depends_on:
+  #     - eventstore.db
+  #     - mongo
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     IP_PORT: ${IP_PORT}
+  #     EVENTSTORE_HOST: eventstore.db
+  #     MONGODB_HOST: mongo
+  #     MONGODB_USER: ${MONGODB_USER}
+  #     MONGODB_PASS: ${MONGODB_PASS}
+
+  eventstore-service:
     build:
       dockerfile: Dockerfile
       context: .
+      args:
+        SERVICE: eventstore
     depends_on:
       - eventstore.db
-      - mongo
     ports:
       - "8080:8080"
     environment:
-      IP_PORT: ${IP_PORT}
+      EVENTSTORE_HOST: eventstore.db
+
+  projection-service:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        SERVICE: projection
+    depends_on:
+      - mongo
+    ports:
+      - "8081:8081"
+    environment:
+      MONGODB_HOST: mongo
+      MONGODB_USER: ${MONGODB_USER}
+      MONGODB_PASS: ${MONGODB_PASS}
+
+  projector-service:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        SERVICE: projector
+    depends_on:
+      - eventstore.db
+      - mongo
+    environment:
       EVENTSTORE_HOST: eventstore.db
       MONGODB_HOST: mongo
       MONGODB_USER: ${MONGODB_USER}

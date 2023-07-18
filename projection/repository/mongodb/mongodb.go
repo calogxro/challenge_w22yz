@@ -52,22 +52,22 @@ func (s *MongoRepository) GetAnswer(key string) (*domain.Answer, error) {
 	return nil, domain.ErrKeyNotFound
 }
 
-func (s *MongoRepository) CreateAnswer(answer domain.Answer) error {
-	_, err := s.coll.InsertOne(context.TODO(), answer)
-	return err
-}
+// func (s *MongoRepository) CreateAnswer(answer domain.Answer) error {
+// 	_, err := s.coll.InsertOne(context.TODO(), answer)
+// 	return err
+// }
 
-func (s *MongoRepository) UpdateAnswer(answer domain.Answer) error {
-	filter := bson.D{{Key: "key", Value: answer.Key}}
-	update := bson.D{
-		{Key: "$set", Value: bson.D{{Key: "value", Value: answer.Value}}},
-	}
-	_, err := s.coll.UpdateOne(context.TODO(), filter, update)
-	return err
-}
+// func (s *MongoRepository) UpdateAnswer(answer domain.Answer) error {
+// 	filter := bson.D{{Key: "key", Value: answer.Key}}
+// 	update := bson.D{
+// 		{Key: "$set", Value: bson.D{{Key: "value", Value: answer.Value}}},
+// 	}
+// 	_, err := s.coll.UpdateOne(context.TODO(), filter, update)
+// 	return err
+// }
 
-func (s *MongoRepository) DeleteAnswer(answer domain.Answer) error {
-	filter := bson.D{{Key: "key", Value: answer.Key}}
-	_, err := s.coll.DeleteOne(context.TODO(), filter)
-	return err
-}
+// func (s *MongoRepository) DeleteAnswer(answer domain.Answer) error {
+// 	filter := bson.D{{Key: "key", Value: answer.Key}}
+// 	_, err := s.coll.DeleteOne(context.TODO(), filter)
+// 	return err
+// }

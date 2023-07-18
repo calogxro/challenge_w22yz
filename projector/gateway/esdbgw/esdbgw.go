@@ -1,4 +1,4 @@
-package esdb
+package gateway
 
 import (
 	"context"

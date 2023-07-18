@@ -5,10 +5,11 @@ import (
 
 	"github.com/calogxro/qaservice/eventstore/repository/esdb"
 	"github.com/calogxro/qaservice/eventstore/service/eventstore"
-	esdbgateway "github.com/calogxro/qaservice/projection/gateway/esdb"
-	"github.com/calogxro/qaservice/projection/repository/mongodb"
+	projectionRepo "github.com/calogxro/qaservice/projection/repository/mongodb"
 	"github.com/calogxro/qaservice/projection/service/projection"
-	"github.com/calogxro/qaservice/projection/service/projector"
+	gateway "github.com/calogxro/qaservice/projector/gateway/esdbgw"
+	projectorRepo "github.com/calogxro/qaservice/projector/repository/mongodb"
+	"github.com/calogxro/qaservice/projector/service/projector"
 
 	"github.com/calogxro/qaservice/domain"
 	Ω "github.com/onsi/gomega"
@@ -26,25 +27,26 @@ func TestServiceWithDBs(t *testing.T) {
 
 	// Setup
 
-	es := esdb.New()
-	rr := mongodb.New()
+	esRepo := esdb.New()
+	projectionRepo := projectionRepo.New()
+	projectorRepo := projectorRepo.New()
 
-	service := eventstore.New(es)
-	projection := projection.New(rr)
-	projector := projector.New(rr)
+	eventstore := eventstore.New(esRepo)
+	projection := projection.New(projectionRepo)
+	projector := projector.New(projectorRepo)
 
-	es.DeleteStream()
-	rr.DeleteAllAnswers()
+	esRepo.DeleteStream()
+	projectorRepo.DeleteAllAnswers()
 
-	esgw := esdbgateway.New()
-	go esgw.Subscribe(func(event *domain.Event) {
+	esdbgw := gateway.New()
+	go esdbgw.Subscribe(func(event *domain.Event) {
 		projector.Project(event)
 	})
 
 	//Create
 
 	answer := testAnswer
-	_, err := service.CreateAnswer(answer)
+	_, err := eventstore.CreateAnswer(answer)
 
 	assert.Nil(t, err)
 
@@ -69,7 +71,7 @@ func TestServiceWithDBs(t *testing.T) {
 	// Update
 
 	answer = domain.Answer{Key: answer.Key, Value: answer.Value + "_2"}
-	service.UpdateAnswer(answer)
+	eventstore.UpdateAnswer(answer)
 
 	g.Eventually(func() *domain.Answer {
 		projAnswer, _ := projection.GetAnswer("name")
@@ -78,7 +80,7 @@ func TestServiceWithDBs(t *testing.T) {
 
 	// Delete
 
-	service.DeleteAnswer(answer.Key)
+	eventstore.DeleteAnswer(answer.Key)
 
 	g.Eventually(func() error {
 		_, err := projection.GetAnswer("name")

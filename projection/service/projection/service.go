@@ -6,9 +6,9 @@ import (
 
 type ReadRepository interface {
 	GetAnswer(key string) (*domain.Answer, error)
-	CreateAnswer(answer domain.Answer) error
-	UpdateAnswer(answer domain.Answer) error
-	DeleteAnswer(answer domain.Answer) error
+	// CreateAnswer(answer domain.Answer) error
+	// UpdateAnswer(answer domain.Answer) error
+	// DeleteAnswer(answer domain.Answer) error
 }
 
 type Projection struct {

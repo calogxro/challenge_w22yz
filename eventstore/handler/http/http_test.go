@@ -25,7 +25,7 @@ func TestPing(t *testing.T) {
 	testutil.RunServiceTests(t, r, []testutil.TestCase{{
 		Description: "test ping",
 		Method:      http.MethodGet,
-		Url:         "/ping",
+		Url:         "/eventstore/ping",
 		Request:     nil,
 		Response: struct {
 			Message string `json:"message"`

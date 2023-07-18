@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qaservice-eventstore
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: qaservice-eventstore
+  template:
+    metadata:
+      labels:
+        app: qaservice-eventstore
+    spec:
+      containers:
+      - name: qaservice-eventstore
+        image: qaservice-eventstore:1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qaservice-eventstore
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: qaservice-eventstore
+# ---
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: eventstoredb-svc
+# spec:
+#   type: ExternalName
+#   externalName: minikube.host
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qaservice-projection
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: qaservice-projection
+  template:
+    metadata:
+      labels:
+        app: qaservice-projection
+    spec:
+      containers:
+      - name: qaservice-projection
+        image: qaservice-projection:1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qaservice-projection
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8081
+  selector:
+    app: qaservice-projection
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qaservice-projector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qaservice-projector
+  template:
+    metadata:
+      labels:
+        app: qaservice-projector
+    spec:
+      containers:
+      - name: qaservice-projector
+        image: qaservice-projector:1.0
+        imagePullPolicy: IfNotPresent

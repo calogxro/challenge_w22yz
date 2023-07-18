@@ -1,4 +1,4 @@
-package esdb
+package gateway
 
 import (
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"

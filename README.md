@@ -100,6 +100,8 @@ Databases used:
 - [EventStoreDB](https://www.eventstore.com/) as event store
 - [MongoDB](https://www.mongodb.com/) as read repository
 
+![Hexagonal architecture](hexagonal-architecture.png)
+
 
 ## Run
 
